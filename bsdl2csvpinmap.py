@@ -60,7 +60,7 @@ class CSVPinConvertSemantics(object):
                     raise Exception('Should have been handled by the grammar: unknown bit vector specification: {}.'.format(bit_vec[1]))
                 nr_pins = vec_max - vec_min
 
-            self._port_map[identifier] = {'nr_pins': nr_pins, 'direction': ast['pin_type']}
+            self._port_map[identifier] = {'nr_pins': nr_pins, 'direction': ast['pin_type'], 'next_pin': 0}
             self._port_vec_length += nr_pins
         return ast
 
@@ -120,7 +120,11 @@ def main():
         port_attrs = semantics._port_map.get(pin_mapping[1], {})
         logging.debug('Pin {} Port {}, attributes: {}'.format(pin_mapping[0], pin_mapping[1], port_attrs))
         port_dir = _direction_mapping.get(port_attrs.get('direction', 'passive'), 'Passive')
-        output_pin_map.append({'Number': pin_mapping[0], 'Name': pin_mapping[1], 'Type' : port_dir, 'Shape': 'Short'})
+        pin_name = pin_mapping[1]
+        if port_attrs.get('nr_pins', 1) != 1:
+            pin_name = '{}{}'.format(pin_name, port_attrs['next_pin'])
+            port_attrs['next_pin'] += 1
+        output_pin_map.append({'Number': pin_mapping[0], 'Name': pin_name, 'Type' : port_dir, 'Shape': 'Short'})
 
     with open(args.output, 'wt+') as outf:
         writer = csv.DictWriter(outf, fieldnames=['Number', 'Name', 'Type', 'Shape'], dialect='excel')
